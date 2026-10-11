@@ -1,0 +1,26 @@
+.env
+.env*.local
+.venv/
+__pycache__/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# Generado por pnpm db:bundle
+supabase/all-migrations.sql
+supabase/pendientes.sql
+# PDFs sintéticos generados por el seed
+seed-output/
+
+# Capturas temporales
+image*.png
+
+# Worker de pdf.js (lo regenera `pnpm install` vía postinstall)
+public/pdf.worker.min.mjs
+
+.vercel

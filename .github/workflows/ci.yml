@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Migrations (PGlite, no secrets)
+        run: pnpm db:check
+
+      - name: Seed (PGlite, no secrets)
+        run: pnpm seed:test
+
+      - name: Acciones (PGlite, no secrets)
+        run: pnpm acciones:test
+
+      - name: Adjuntos (deterministic, no secrets)
+        run: pnpm adjuntos:test
+
+      # Secret-gated batteries: skipped when GEMINI_API_KEY is absent.
+      # (Never required for a green build; `--live` scripts stay out of CI.)
+      - name: Agent (needs GEMINI_API_KEY, optional)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then echo "skip: no GEMINI_API_KEY"; exit 0; fi
+          pnpm agent:test
+
+      - name: Guardrails (needs GEMINI_API_KEY, optional)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then echo "skip: no GEMINI_API_KEY"; exit 0; fi
+          pnpm guardrails:test
+
+      - name: Lector (needs GEMINI_API_KEY, optional)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then echo "skip: no GEMINI_API_KEY"; exit 0; fi
+          pnpm lector:test
+
+      - name: Build
+        run: pnpm build
